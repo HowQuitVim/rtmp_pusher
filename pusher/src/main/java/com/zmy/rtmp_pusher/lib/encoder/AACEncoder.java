@@ -49,13 +49,16 @@ public class AACEncoder extends IEncoder {
     @Override
     protected void onOutputFormatChanged() {
         ByteBuffer buffer = mediaCodec.getOutputFormat().getByteBuffer("csd-0");
+        if (buffer == null || buffer.capacity() < 2) {
+            throw new IllegalStateException("invalid AudioSpecificConfig,buffer=" + buffer);
+        }
         audioSpecificConfig = ByteBuffer.allocateDirect(buffer.capacity());
         buffer.limit(buffer.capacity());
         buffer.position(0);
         audioSpecificConfig.put(buffer);
         audioSpecificConfig.limit(audioSpecificConfig.capacity());
         audioSpecificConfig.position(0);
-        outputQueue.enqueue(RtmpPacket.createForAudio(getAudioSpecificConfig(), getAudioSpecificConfig().capacity(), sampleRate, channels, getBytesPerSample(), true));
+        outputQueue.enqueue(RtmpPacket.createForAudio(getAudioSpecificConfig(), 0, getAudioSpecificConfig().capacity(), sampleRate, channels, getBytesPerSample(), true));
     }
 
     private int getBytesPerSample() {
@@ -85,7 +88,9 @@ public class AACEncoder extends IEncoder {
         if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
             return;
         }
-        outputQueue.enqueue(RtmpPacket.createForAudio(buffer, info.size, sampleRate, channels, getBytesPerSample(), false));
+        if (info.size > 0) {
+            outputQueue.enqueue(RtmpPacket.createForAudio(buffer, info.offset, info.size, sampleRate, channels, getBytesPerSample(), false));
+        }
     }
 
     @Override

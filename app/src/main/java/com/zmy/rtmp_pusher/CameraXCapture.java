@@ -133,7 +133,7 @@ public class CameraXCapture extends VideoCapture implements Preview.SurfaceProvi
     public void onSurfaceRequested(@NonNull SurfaceRequest request) {
         outputWidth = request.getResolution().getWidth();
         outputHeight = request.getResolution().getHeight();
-        Log.d("zmy", "camera output size = " + outputWidth + "x" + outputHeight);
+        Log.d("rtmp", "camera output body_size = " + outputWidth + "x" + outputHeight);
         request.getCamera().getCameraState().addObserver(ContextCompat.getMainExecutor(context), this);
         this.request = request;
         if (callback != null) {

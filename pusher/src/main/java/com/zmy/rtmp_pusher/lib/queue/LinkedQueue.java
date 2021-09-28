@@ -60,11 +60,16 @@ public class LinkedQueue<T> extends Queue<T, T[]> {
     @Override
     public synchronized void close() {
         super.close();
-        clearElements();
+        clear();
         wakeUp();
     }
 
-    private void clearElements() {
+    public Deleter<T> getDeleter() {
+        return deleter;
+    }
+
+    @Override
+    public synchronized void clear() {
         if (deleter != null) {
             while (!list.isEmpty()) {
                 deleter.delete(list.removeFirst());

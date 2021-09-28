@@ -88,6 +88,7 @@ public abstract class IEncoder {
         setReady(false);
         waitForCodecDone();
         mediaCodec.release();
+        mediaCodec=null;
     }
 
     protected void waitForCodecDone() {
@@ -112,7 +113,7 @@ public abstract class IEncoder {
             try {
                 int index = mediaCodec.dequeueOutputBuffer(info, -1);
                 if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    Log.d("zmy", "onOutputFormatChanged-------" + IEncoder.this.getClass().getSimpleName());
+                    Log.d("rtmp", "onOutputFormatChanged-------" + IEncoder.this.getClass().getSimpleName());
                     onOutputFormatChanged();
                 }
                 if (index == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED && android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {

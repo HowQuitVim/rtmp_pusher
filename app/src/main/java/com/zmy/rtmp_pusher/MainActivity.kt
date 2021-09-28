@@ -72,7 +72,7 @@ class MainActivity : AppCompatActivity(), AudioCaptureCallback, EncoderCallback,
                 pusher?.start()
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.d("zmy", "fail to init pusher")
+                Log.d("rtmp", "fail to init pusher")
             }
         }
     }
@@ -87,35 +87,35 @@ class MainActivity : AppCompatActivity(), AudioCaptureCallback, EncoderCallback,
             audioEncoder?.start()
             onModuleReady()
         } else {
-            Log.d("zmy", "fail to init AudioCapture")
+            Log.d("rtmp", "fail to init AudioCapture")
             release()
         }
     }
 
     override fun onAudioCaptureError(e: Exception?) {
-        Log.e("zmy", "fail to collect audio pcm", e)
+        Log.e("rtmp", "fail to collect audio pcm", e)
         release()
     }
 
     override fun onPushError(errno: Int) {
-        Log.e("zmy", "fail to push a/v frame to server,errno=$errno,desc=${Err.errDescribe(errno)}")
-        while (true) {
+        Log.e("rtmp", "fail to push a/v frame to server,errno=$errno,desc=${Err.errDescribe(errno)}")
+        while (pusher?.isReady == true) {
             try {
                 pusher?.initialize()
                 break
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            Thread.sleep(100)
         }
+        Thread.sleep(100)
     }
 
     override fun onEncodeError(encoder: IEncoder, e: Exception?) {
         if (encoder is AVCEncoder) {
-            Log.e("zmy", "video encode error", e)
+            Log.e("rtmp", "video encode error", e)
         }
         if (encoder is AACEncoder) {
-            Log.e("zmy", "audio encode error", e)
+            Log.e("rtmp", "audio encode error", e)
         }
         release()
     }
@@ -137,7 +137,7 @@ class MainActivity : AppCompatActivity(), AudioCaptureCallback, EncoderCallback,
     }
 
     override fun onVideoCaptureError(e: Exception?) {
-        Log.e("zmy", "fail to open camera", e)
+        Log.e("rtmp", "fail to open camera", e)
         release()
     }
 }

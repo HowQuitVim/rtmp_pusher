@@ -28,7 +28,7 @@ public abstract class Queue<T, O> {
     public abstract int getCapacity();
 
     public abstract int getSize();
-
+    public abstract void clear();
     public int getMaxCapacity() {
         return maxCapacity;
     }

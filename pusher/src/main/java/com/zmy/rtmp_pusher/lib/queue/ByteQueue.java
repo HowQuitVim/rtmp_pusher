@@ -173,6 +173,14 @@ public class ByteQueue extends Queue<ByteBuffer, ByteBuffer> {
         wakeUp();
     }
 
+    @Override
+    public synchronized void clear() {
+        writeCursor=0;
+        readCursor=0;
+        totalDequeueBytes=0;
+        totalEnqueueBytes=0;
+    }
+
     public int getInitialCapacity() {
         return initialCapacity;
     }
@@ -184,7 +192,7 @@ public class ByteQueue extends Queue<ByteBuffer, ByteBuffer> {
         public Area(int start, int size) {
             this.start = start;
             if (size <= 0)
-                throw new IllegalArgumentException("size must be more than 0");
+                throw new IllegalArgumentException("body_size must be more than 0");
             this.size = size;
         }
 
@@ -206,7 +214,7 @@ public class ByteQueue extends Queue<ByteBuffer, ByteBuffer> {
         public String toString() {
             return "Area{" +
                     "start=" + start +
-                    ", size=" + size +
+                    ", body_size=" + size +
                     ", end=" + getEnd() +
                     '}';
         }

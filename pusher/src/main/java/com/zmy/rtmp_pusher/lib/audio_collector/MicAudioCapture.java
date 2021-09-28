@@ -111,8 +111,10 @@ public class MicAudioCapture extends AudioCapture {
             recordThread.exit();
         }
         try {
-            if (audioRecord != null)
+            if (audioRecord != null) {
                 audioRecord.release();
+                audioRecord = null;
+            }
         } catch (Exception e) {
             if (callback != null) {
                 callback.onAudioCaptureError(e);

@@ -6,16 +6,27 @@ import com.zmy.rtmp_pusher.lib.queue.LinkedQueue;
 import java.nio.ByteBuffer;
 
 public class RtmpPacket {
+
+
     public static final LinkedQueue.Deleter<RtmpPacket> DELETER = new RtmpPacketDeleter();
 
     private long handle = 0;
+    private PacketType type;
 
-    private RtmpPacket(long handle) {
+    private RtmpPacket(long handle, PacketType type) {
+        if (handle == 0) {
+            throw new IllegalArgumentException("fail to create RtmpPacket,check the arguments");
+        }
         this.handle = handle;
+        this.type = type;
     }
 
     public long getHandle() {
         return handle;
+    }
+
+    public PacketType getType() {
+        return type;
     }
 
     public synchronized void release() {
@@ -25,24 +36,36 @@ public class RtmpPacket {
         }
     }
 
-    private native static long native_create_for_sps_pps(ByteBuffer sps, int spsLen, ByteBuffer pps, int ppsLen);
+    private native static long native_create_for_sps_pps(ByteBuffer sps, int spsOffset, int spsLen, ByteBuffer pps, int ppsOffset, int ppsLen);
 
-    private native static long native_create_for_video(ByteBuffer data, int dataLen, boolean keyFrame);
+    private native static long native_create_for_video(ByteBuffer data, int offset, int dataLen, boolean keyFrame);
 
-    private native static long native_create_for_audio(ByteBuffer data, int dataLen, int sampleRate, int channels, int bytesPerSample, boolean isConfigData);
+    private native static long native_create_for_audio(ByteBuffer data, int offset, int dataLen, int sampleRate, int channels, int bytesPerSample, boolean isConfigData);
 
-    private native void native_release_frame(long release);
+    private native void native_release_frame(long handle);
 
-    public static RtmpPacket createForSpsPps(ByteBuffer sps, int spsLen, ByteBuffer pps, int ppsLen) {
-        return new RtmpPacket(native_create_for_sps_pps(sps, spsLen, pps, ppsLen));
+    private native long native_clone(long handle);
+
+    public RtmpPacket copy(){
+        return new RtmpPacket(native_clone(handle),type);
     }
 
-    public static RtmpPacket createForVideo(ByteBuffer data, int dataLen, boolean keyFrame) {
-        return new RtmpPacket(native_create_for_video(data, dataLen, keyFrame));
+
+    public static RtmpPacket createForSpsPps(ByteBuffer sps, int spsOffset, int spsLen, ByteBuffer pps, int ppsOffset, int ppsLen) {
+        RtmpPacket packet = new RtmpPacket(native_create_for_sps_pps(sps, spsOffset, spsLen, pps, ppsOffset, ppsLen), PacketType.SPS_PPS);
+        return packet;
     }
 
-    public static RtmpPacket createForAudio(ByteBuffer data, int dataLen, int sampleRate, int channels, int bytesPerSample, boolean isConfigData) {
-        return new RtmpPacket(native_create_for_audio(data, dataLen, sampleRate, channels, bytesPerSample, isConfigData));
+    public static RtmpPacket createForVideo(ByteBuffer data, int offset, int dataLen, boolean keyFrame) {
+        return new RtmpPacket(native_create_for_video(data, offset, dataLen, keyFrame), keyFrame ? PacketType.VIDEO_SYNC_FRAME : PacketType.VIDEO_P_FRAME);
+    }
+
+    public static RtmpPacket createForAudio(ByteBuffer data, int offset, int dataLen, int sampleRate, int channels, int bytesPerSample, boolean isConfigData) {
+        return new RtmpPacket(native_create_for_audio(data, offset, dataLen, sampleRate, channels, bytesPerSample, isConfigData), isConfigData ? PacketType.AUDIO_SPECIFIC_CONFIG : PacketType.AUDIO);
+    }
+
+    public enum PacketType {
+        AUDIO_SPECIFIC_CONFIG, SPS_PPS, VIDEO_SYNC_FRAME, VIDEO_P_FRAME, AUDIO
     }
 
     private static class RtmpPacketDeleter implements LinkedQueue.Deleter<RtmpPacket> {
@@ -55,4 +78,5 @@ public class RtmpPacket {
                 rtmpPacket.release();
         }
     }
+
 }

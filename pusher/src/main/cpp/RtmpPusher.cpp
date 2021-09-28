@@ -47,6 +47,9 @@ RtmpPusher::~RtmpPusher() {
 
 
 bool RtmpPusher::push(RtmpPacket *packet) {
+    if (!rtmp) {
+        return false;
+    }
     packet->update_stream_id(rtmp->m_stream_id);
     packet->update_timestamp(current_timestamp());
     int ret = RTMP_SendPacket(rtmp, packet->getPacket(), 1);

@@ -15,8 +15,7 @@ public class Pusher {
     private final PusherCallback callback;
     private long handle = 0;
     private final String url;
-    private LinkedQueue<RtmpPacket> inputQueue;
-    private boolean runFlag = false;
+    private final LinkedQueue<RtmpPacket> inputQueue;
     private boolean ready = false;
     private PushThread pushThread;
 
@@ -38,8 +37,8 @@ public class Pusher {
     }
 
     public synchronized void initialize() throws PusherException {
-        doInit();
-        doConnect();
+        init();
+        connect();
         setReady(true);
     }
 
@@ -79,14 +78,13 @@ public class Pusher {
         }
     }
 
-
-    private void doInit() throws PusherException {
+    private void init() throws PusherException {
         if (!native_init(handle)) {
             throw new PusherException(new RuntimeException("fail to init pusher"));
         }
     }
 
-    private void doConnect() throws PusherException {
+    private void connect() throws PusherException {
         if (!native_connect(handle)) {
             throw new PusherException(new RuntimeException("fail to connect to server"));
         }
@@ -102,9 +100,16 @@ public class Pusher {
 
     private synchronized native void native_release(long handle);
 
+    public String getUrl() {
+        return url;
+    }
+
+    private RtmpPacket audioSpecificConfig;
+    private RtmpPacket videoSpsPps;
 
     class PushThread extends WorkerThread {
         RtmpPacket[] frame = new RtmpPacket[1];
+        private int count = 0;
 
         public PushThread() {
             super("PusherThread");
@@ -116,8 +121,15 @@ public class Pusher {
             if (count != 1) {
                 return true;
             }
+            RtmpPacket target = frame[0];
+            if (target.getType() == RtmpPacket.PacketType.AUDIO_SPECIFIC_CONFIG) {
+                audioSpecificConfig = target.copy();
+            }
+            if (target.getType() == RtmpPacket.PacketType.SPS_PPS) {
+                videoSpsPps = target.copy();
+            }
             synchronized (Pusher.this) {
-                boolean ret = native_push(handle, frame[0].getHandle());
+                boolean ret = native_push(handle, target.getHandle());
                 if (!ret) {
                     callback.onPushError(Err.errno());
                 }

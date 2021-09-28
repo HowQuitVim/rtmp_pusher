@@ -27,18 +27,21 @@ JNIEXPORT jboolean  JNICALL native_push(JNIEnv *env, jobject thiz, jlong handle,
 /*-----------------------------------EncodeFrame----------------------------------------*/
 extern "C"
 JNIEXPORT jlong  JNICALL
-native_create_for_sps_pps(JNIEnv *env, jclass clazz, jobject sps, jint sps_len, jobject pps, jint pps_len);
+native_create_for_sps_pps(JNIEnv *env, jclass clazz, jobject sps, jint sps_offset, jint sps_len, jobject pps, jint pps_offset, jint pps_len);
 extern "C"
 JNIEXPORT jlong  JNICALL
-native_create_for_video(JNIEnv *env, jclass clazz, jobject data, jint data_len, jboolean is_key_frame);
+native_create_for_video(JNIEnv *env, jclass clazz, jobject data, jint offset, jint data_len, jboolean is_key_frame);
 extern "C"
 JNIEXPORT jlong  JNICALL
-native_create_for_audio(JNIEnv *env, jclass clazz, jobject data, jint data_len, int sample_rate,
+native_create_for_audio(JNIEnv *env, jclass clazz, jobject data, jint offset, jint data_len, int sample_rate,
                         int channels,
                         int byte_per_sample, jboolean is_config_data);
 extern "C"
 JNIEXPORT void  JNICALL
 native_release_frame(JNIEnv *env, jclass jobject, jlong handle);
+extern "C"
+JNIEXPORT jlong  JNICALL
+native_clone(JNIEnv *env, jclass jobject, jlong handle);
 
 
 
@@ -53,17 +56,18 @@ JNIEXPORT jobject JNICALL native_err_describe(JNIEnv *env, jclass clazz, jint er
 const char *pusher_class = "com/zmy/rtmp_pusher/lib/pusher/Pusher";
 static const JNINativeMethod pusher_native_method[] = {
         {"native_new_instance", "(Ljava/lang/String;)J", (void *) native_new_instance},
-        {"native_release",     "(J)V",                  (void *) native_release},
-        {"native_init",        "(J)Z",                  (void *) native_init},
-        {"native_connect",     "(J)Z",                  (void *) native_connect},
-        {"native_push",        "(JJ)Z",                 (void *) native_push},
+        {"native_release",      "(J)V",                  (void *) native_release},
+        {"native_init",         "(J)Z",                  (void *) native_init},
+        {"native_connect",      "(J)Z",                  (void *) native_connect},
+        {"native_push",         "(JJ)Z",                 (void *) native_push},
 };
 const char *encode_frame_class = "com/zmy/rtmp_pusher/lib/encoder/RtmpPacket";
 static const JNINativeMethod encode_frame_native_method[] = {
-        {"native_create_for_sps_pps", "(Ljava/nio/ByteBuffer;ILjava/nio/ByteBuffer;I)J", (void *) native_create_for_sps_pps},
-        {"native_create_for_video",  "(Ljava/nio/ByteBuffer;IZ)J",                      (void *) native_create_for_video},
-        {"native_create_for_audio",  "(Ljava/nio/ByteBuffer;IIIIZ)J",                   (void *) native_create_for_audio},
-        {"native_release_frame",    "(J)V",                                            (void *) native_release_frame},
+        {"native_create_for_sps_pps", "(Ljava/nio/ByteBuffer;IILjava/nio/ByteBuffer;II)J", (void *) native_create_for_sps_pps},
+        {"native_create_for_video",   "(Ljava/nio/ByteBuffer;IIZ)J",                       (void *) native_create_for_video},
+        {"native_create_for_audio",   "(Ljava/nio/ByteBuffer;IIIIIZ)J",                    (void *) native_create_for_audio},
+        {"native_release_frame",      "(J)V",                                              (void *) native_release_frame},
+        {"native_clone",              "(J)J",                                              (void *) native_clone},
 };
 
 const char *err_class = "com/zmy/rtmp_pusher/lib/exception/Err";
@@ -147,25 +151,25 @@ JNIEXPORT jboolean  JNICALL native_push(JNIEnv *env, jobject thiz, jlong handle,
 /*-----------------------------------EncodeFrame----------------------------------------*/
 extern "C"
 JNIEXPORT jlong JNICALL
-native_create_for_sps_pps(JNIEnv *env, jclass clazz, jobject sps, jint sps_len, jobject pps, jint pps_len) {
+native_create_for_sps_pps(JNIEnv *env, jclass clazz, jobject sps, jint sps_offset, jint sps_len, jobject pps, jint pps_offset, jint pps_len) {
     char *sps_data = (char *) env->GetDirectBufferAddress(sps);
     char *pps_data = (char *) env->GetDirectBufferAddress(pps);
-    return (int64_t) RtmpPacket::create_for_sps_pps(sps_data, sps_len, pps_data, pps_len);
+    return (int64_t) RtmpPacket::create_for_sps_pps(sps_data + sps_offset, sps_len, pps_data + pps_offset, pps_len);
 }
 extern "C"
 JNIEXPORT jlong  JNICALL
-native_create_for_video(JNIEnv *env, jclass clazz, jobject data, jint data_len, jboolean is_key_frame) {
+native_create_for_video(JNIEnv *env, jclass clazz, jobject data, jint offset, jint data_len, jboolean is_key_frame) {
     char *frame_data = (char *) env->GetDirectBufferAddress(data);
-    return (int64_t) RtmpPacket::create_for_video(frame_data, data_len, is_key_frame);
+    return (int64_t) RtmpPacket::create_for_video(frame_data + offset, data_len, is_key_frame);
 
 }
 extern "C"
 JNIEXPORT jlong  JNICALL
-native_create_for_audio(JNIEnv *env, jclass clazz, jobject data, jint data_len, int sample_rate,
+native_create_for_audio(JNIEnv *env, jclass clazz, jobject data, jint offset, jint data_len, int sample_rate,
                         int channels,
                         int byte_per_sample, jboolean is_config_data) {
     char *frame_data = (char *) env->GetDirectBufferAddress(data);
-    return (int64_t) RtmpPacket::create_for_audio(frame_data, data_len, is_config_data, sample_rate, channels, byte_per_sample);
+    return (int64_t) RtmpPacket::create_for_audio(frame_data + offset, data_len, is_config_data, sample_rate, channels, byte_per_sample);
 }
 
 extern "C"
@@ -174,7 +178,12 @@ native_release_frame(JNIEnv *env, jclass jobject, jlong handle) {
     delete (RtmpPacket *) handle;
 }
 
-
+extern "C"
+JNIEXPORT jlong  JNICALL
+native_clone(JNIEnv *env, jclass jobject, jlong handle) {
+    RtmpPacket *src = (RtmpPacket *) handle;
+    return (int64_t) src->clone();
+}
 
 
 

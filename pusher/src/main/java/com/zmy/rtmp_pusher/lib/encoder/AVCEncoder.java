@@ -3,6 +3,7 @@ package com.zmy.rtmp_pusher.lib.encoder;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.util.Log;
 
 import java.nio.ByteBuffer;
 
@@ -48,7 +49,7 @@ public class AVCEncoder extends IEncoder implements EOFHandle {
         this.pps = ByteBuffer.allocateDirect(ppsLength);
         this.sps.put(sps);
         this.pps.put(pps);
-        outputQueue.enqueue(RtmpPacket.createForSpsPps(getSPS(), getSPS().capacity(), getPPS(), getPPS().capacity()));
+        outputQueue.enqueue(RtmpPacket.createForSpsPps(getSPS(), 0,getSPS().capacity(), getPPS(), 0,getPPS().capacity()));
     }
 
     public ByteBuffer getSPS() {
@@ -64,8 +65,17 @@ public class AVCEncoder extends IEncoder implements EOFHandle {
         if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
             return;
         }
-        outputQueue.enqueue(RtmpPacket.createForVideo(buffer, info.size, (info.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0));
+        if (info.size > 0) {
+            outputQueue.enqueue(RtmpPacket.createForVideo(buffer, info.offset,info.size, (info.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0));
+        }
+    }
 
+    @Override
+    public void release() {
+        super.release();
+        if (getSurface() != null) {
+            getSurface().release();
+        }
     }
 
     @Override
