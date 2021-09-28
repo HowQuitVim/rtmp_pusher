@@ -1,12 +1,16 @@
 package com.zmy.rtmp_pusher.lib.queue;
 
+import androidx.annotation.Nullable;
+
 import java.util.LinkedList;
 
 public class LinkedQueue<T> extends Queue<T, T[]> {
-    private LinkedList<T> list = new LinkedList<>();
+    private final LinkedList<T> list = new LinkedList<>();
+    private final Deleter<T> deleter;
 
-    public LinkedQueue(int maxCapacity) {
+    public LinkedQueue(int maxCapacity, @Nullable Deleter<T> deleter) {
         super(maxCapacity);
+        this.deleter = deleter;
     }
 
     @Override
@@ -56,5 +60,22 @@ public class LinkedQueue<T> extends Queue<T, T[]> {
     @Override
     public synchronized void close() {
         super.close();
+        clearElements();
+        wakeUp();
     }
+
+    private void clearElements() {
+        if (deleter != null) {
+            while (!list.isEmpty()) {
+                deleter.delete(list.removeFirst());
+            }
+        } else {
+            list.clear();
+        }
+    }
+
+    public interface Deleter<T> {
+        void delete(T t);
+    }
+
 }

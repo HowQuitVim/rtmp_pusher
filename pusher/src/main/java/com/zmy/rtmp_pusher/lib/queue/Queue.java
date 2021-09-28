@@ -1,6 +1,6 @@
 package com.zmy.rtmp_pusher.lib.queue;
 
-public abstract class Queue<T,O> {
+public abstract class Queue<T, O> {
     protected int maxCapacity;
     protected boolean canWrite = true;
     protected boolean canRead = true;
@@ -32,7 +32,6 @@ public abstract class Queue<T,O> {
     public int getMaxCapacity() {
         return maxCapacity;
     }
-
 
     protected synchronized void block() {
         try {

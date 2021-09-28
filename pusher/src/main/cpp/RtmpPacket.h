@@ -17,18 +17,18 @@ public:
 
     RTMPPacket *getPacket() const;
 
-    void updateTimestamp(uint32_t timestamp);
+    void update_timestamp(uint32_t timestamp);
 
-    void updateStreamId(int id);
+    void update_stream_id(int id);
 
 
     virtual ~RtmpPacket();
 
-    static RtmpPacket *createForSPSPPS(char *sps, int spsLen, char *pps, int ppsLen);
+    static RtmpPacket *create_for_sps_pps(char *sps, int sps_length, char *pps, int pps_length);
 
-    static RtmpPacket *createForVideo(char *data, int dataLen, bool keyFrame);
+    static RtmpPacket *create_for_video(char *data, int dataLen, bool keyFrame);
 
-    static RtmpPacket *createForAudio(char *data, int dataLen,bool  isConfigData,int sampleRate,int channels,int bytePerSample);
+    static RtmpPacket *create_for_audio(char *data, int dataLen, bool  isConfigData, int sampleRate, int channels, int bytesPerSample);
 };
 
 

@@ -1,7 +1,15 @@
 package com.zmy.rtmp_pusher.lib.exception;
 
 public class Err {
-    public native static int errno();
+    private native static int nativeErrno();
 
-    public native static String errDescribe(int err);
+    private native static String nativeErrDescribe(int err);
+
+    public static int errno() {
+        return nativeErrno();
+    }
+
+    public static String errDescribe(int err) {
+        return nativeErrDescribe(err);
+    }
 }

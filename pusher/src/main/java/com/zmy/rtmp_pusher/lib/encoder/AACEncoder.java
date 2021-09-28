@@ -1,17 +1,14 @@
 package com.zmy.rtmp_pusher.lib.encoder;
 
+import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Build;
-import android.util.Log;
 
 
 import com.zmy.rtmp_pusher.lib.queue.ByteQueue;
+import com.zmy.rtmp_pusher.lib.util.WorkerThread;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class AACEncoder extends IEncoder {
@@ -58,7 +55,20 @@ public class AACEncoder extends IEncoder {
         audioSpecificConfig.put(buffer);
         audioSpecificConfig.limit(audioSpecificConfig.capacity());
         audioSpecificConfig.position(0);
-        outputQueue.enqueue(EncodeFrame.createForAudio(getAudioSpecificConfig(), getAudioSpecificConfig().capacity(), true));
+        outputQueue.enqueue(RtmpPacket.createForAudio(getAudioSpecificConfig(), getAudioSpecificConfig().capacity(), sampleRate, channels, getBytesPerSample(), true));
+    }
+
+    private int getBytesPerSample() {
+        switch (sampleFormat) {
+            case AudioFormat.ENCODING_PCM_8BIT:
+                return 1;
+            case AudioFormat.ENCODING_PCM_16BIT:
+                return 2;
+            case AudioFormat.ENCODING_PCM_FLOAT:
+                return 4;
+            default:
+                return 0;
+        }
     }
 
     public ByteBuffer getAudioSpecificConfig() {
@@ -75,10 +85,23 @@ public class AACEncoder extends IEncoder {
         if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
             return;
         }
-        outputQueue.enqueue(EncodeFrame.createForAudio(buffer, info.size, false));
+        outputQueue.enqueue(RtmpPacket.createForAudio(buffer, info.size, sampleRate, channels, getBytesPerSample(), false));
     }
 
-    class EncodeWriteThread extends EncodeThread {
+    @Override
+    protected void waitForCodecDone() {
+        if (encodeWriteThread != null) {
+            try {
+                mediaCodec.stop();
+                encodeWriteThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        super.waitForCodecDone();
+    }
+
+    class EncodeWriteThread extends WorkerThread {
 
         public EncodeWriteThread() {
             super("EncodeWriteThread");
@@ -88,6 +111,7 @@ public class AACEncoder extends IEncoder {
         protected boolean doMain() {
             try {
                 int index = mediaCodec.dequeueInputBuffer(-1);
+                int flag = 0;
                 if (index >= 0) {
                     ByteBuffer codecBuffer;
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -98,11 +122,17 @@ public class AACEncoder extends IEncoder {
                     codecBuffer.limit(codecBuffer.capacity());
                     codecBuffer.position(0);
                     int bytes = inputQueue.dequeue(codecBuffer);
-                    mediaCodec.queueInputBuffer(index, 0, bytes, 0, 0);
+                    if (inputQueue.isClosed()) {
+                        flag = MediaCodec.BUFFER_FLAG_END_OF_STREAM;
+                    }
+                    mediaCodec.queueInputBuffer(index, 0, bytes, 0, flag);
                 }
-                return false;
+                return (flag & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
             } catch (Exception e) {
-                callback.onEncodeError(AACEncoder.this,e);
+                e.printStackTrace();
+                if (isReady()) {
+                    callback.onEncodeError(AACEncoder.this, e);
+                }
                 return true;
             }
         }

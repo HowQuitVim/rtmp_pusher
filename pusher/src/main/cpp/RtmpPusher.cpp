@@ -4,9 +4,10 @@
 
 #include "RtmpPusher.h"
 
-RtmpPusher::RtmpPusher(std::string &&url) : url(url) {}
+RtmpPusher::RtmpPusher(std::string &&url) : url(std::move(url)) {}
 
-const std::string &RtmpPusher::getUrl() const {
+
+const std::string &RtmpPusher::get_url() const {
     return url;
 }
 
@@ -37,24 +38,26 @@ bool RtmpPusher::init() {
 }
 
 RtmpPusher::~RtmpPusher() {
-    RTMP_Close(rtmp);
-    RTMP_Free(rtmp);
-    rtmp = nullptr;
+    if (rtmp) {
+        RTMP_Close(rtmp);
+        RTMP_Free(rtmp);
+        rtmp = nullptr;
+    }
 }
 
 
 bool RtmpPusher::push(RtmpPacket *packet) {
-    packet->updateStreamId(rtmp->m_stream_id);
-    packet->updateTimestamp(currentTimestamp());
+    packet->update_stream_id(rtmp->m_stream_id);
+    packet->update_timestamp(current_timestamp());
     int ret = RTMP_SendPacket(rtmp, packet->getPacket(), 1);
     delete packet;
     return ret;
 }
 
-uint32_t RtmpPusher::currentTimestamp() {
+uint32_t RtmpPusher::current_timestamp() {
     uint32_t current = RTMP_GetTime();
-    if (startTime == 0) {
-        startTime = current;
+    if (start_time == 0) {
+        start_time = current;
     }
-    return current - startTime;
+    return current - start_time;
 }

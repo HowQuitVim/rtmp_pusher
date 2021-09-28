@@ -13,16 +13,20 @@ class RtmpPusher {
 private:
     std::string url;
     RTMP *rtmp = nullptr;
-    uint32_t startTime=0;
-    uint32_t currentTimestamp();
+    uint32_t start_time = 0;
+
+    uint32_t current_timestamp();
+
 public:
+
     RtmpPusher(std::string &&url);
+
 
     bool connect();
 
     bool init();
 
-    const std::string &getUrl() const;
+    const std::string &get_url() const;
 
     virtual ~RtmpPusher();
 

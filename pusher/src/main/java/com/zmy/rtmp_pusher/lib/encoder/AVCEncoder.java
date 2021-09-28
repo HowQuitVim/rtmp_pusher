@@ -6,7 +6,7 @@ import android.media.MediaFormat;
 
 import java.nio.ByteBuffer;
 
-public class AVCEncoder extends IEncoder {
+public class AVCEncoder extends IEncoder implements EOFHandle {
     private final int width;
     private final int height;
     private final int fps;
@@ -48,6 +48,7 @@ public class AVCEncoder extends IEncoder {
         this.pps = ByteBuffer.allocateDirect(ppsLength);
         this.sps.put(sps);
         this.pps.put(pps);
+        outputQueue.enqueue(RtmpPacket.createForSpsPps(getSPS(), getSPS().capacity(), getPPS(), getPPS().capacity()));
     }
 
     public ByteBuffer getSPS() {
@@ -63,11 +64,12 @@ public class AVCEncoder extends IEncoder {
         if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
             return;
         }
-        boolean isKeyFrame = false;
-        if ((info.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0) {
-            isKeyFrame = true;
-            outputQueue.enqueue(EncodeFrame.createForSPSPPS(getSPS(), getSPS().capacity(), getPPS(), getPPS().capacity()));
-        }
-        outputQueue.enqueue(EncodeFrame.createForVideo(buffer, info.size, isKeyFrame));
+        outputQueue.enqueue(RtmpPacket.createForVideo(buffer, info.size, (info.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0));
+
+    }
+
+    @Override
+    public void signalEndOfInputStream() {
+        mediaCodec.signalEndOfInputStream();
     }
 }

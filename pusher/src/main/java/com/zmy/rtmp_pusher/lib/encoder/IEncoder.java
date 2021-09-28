@@ -5,9 +5,8 @@ import android.media.MediaFormat;
 import android.util.Log;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-
 import com.zmy.rtmp_pusher.lib.queue.LinkedQueue;
+import com.zmy.rtmp_pusher.lib.util.WorkerThread;
 
 import java.nio.ByteBuffer;
 
@@ -22,7 +21,8 @@ public abstract class IEncoder {
     protected ByteBuffer[] inputBuffers;
     private EncodeReadThread encodeReadThread;
     private final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-    protected LinkedQueue<EncodeFrame> outputQueue;
+    protected LinkedQueue<RtmpPacket> outputQueue;
+    private boolean ready = false;
 
     public IEncoder(int bitrate, EncoderCallback callback) {
         this.bitrate = bitrate;
@@ -31,12 +31,21 @@ public abstract class IEncoder {
 
     protected abstract MediaFormat getFormat();
 
+    public synchronized boolean isReady() {
+        return ready;
+    }
+
+    public synchronized void setReady(boolean ready) {
+        this.ready = ready;
+    }
+
     public void init() throws EncoderException {
         try {
             MediaFormat format = getFormat();
             mediaCodec = MediaCodec.createEncoderByType(format.getString(MediaFormat.KEY_MIME));
             mediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             if (createSurface()) surface = mediaCodec.createInputSurface();
+            setReady(true);
         } catch (Exception e) {
             throw new EncoderException(e);
         }
@@ -48,7 +57,7 @@ public abstract class IEncoder {
 
     protected abstract boolean createSurface();
 
-    public void setOutputQueue(LinkedQueue<EncodeFrame> outputQueue) {
+    public void setOutputQueue(LinkedQueue<RtmpPacket> outputQueue) {
         this.outputQueue = outputQueue;
     }
 
@@ -75,52 +84,27 @@ public abstract class IEncoder {
 
     protected abstract void onEncode(ByteBuffer buffer, MediaCodec.BufferInfo info);
 
-    public void stop() {
-
+    public void release() {
+        setReady(false);
+        waitForCodecDone();
+        mediaCodec.release();
     }
 
-    abstract class EncodeThread extends Thread {
-        private boolean exitFlag = false;
-
-        public EncodeThread(@NonNull String name) {
-            super(name);
-        }
-
-        @Override
-        public void run() {
-            super.run();
-            while (true) {
-                synchronized (EncodeThread.this) {
-                    if (exitFlag) {
-                        break;
-                    }
-                }
-                if (doMain()) {
-                    break;
-                }
-            }
-            synchronized (EncodeThread.this) {
-                exitFlag = true;
-            }
-            Log.d(getName(), getName() + " exit");
-        }
-
-        protected abstract boolean doMain();
-
-        public synchronized void exit() {
-            exitFlag = true;
+    protected void waitForCodecDone() {
+        if (encodeReadThread != null) {
             try {
-                this.join();
+                encodeReadThread.join();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    class EncodeReadThread extends EncodeThread {
+
+    class EncodeReadThread extends WorkerThread {
 
         public EncodeReadThread() {
-            super("EncodeReadThread");
+            super(IEncoder.this.getClass().getSimpleName() + "_EncodeReadThread");
         }
 
         @Override
@@ -142,11 +126,17 @@ public abstract class IEncoder {
                         buffer = outputBuffers[index];
                     }
                     onEncode(buffer, info);
+                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        outputQueue.close();
+                    }
                     mediaCodec.releaseOutputBuffer(index, false);
                 }
-                return false;
+                return (info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
             } catch (Exception e) {
-                callback.onEncodeError( IEncoder.this,e);
+                e.printStackTrace();
+                if (!isReady()) {
+                    callback.onEncodeError(IEncoder.this, e);
+                }
                 return true;
             }
         }
