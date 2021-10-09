@@ -1,10 +1,12 @@
 package com.zmy.rtmp_pusher.lib.pusher;
 
-import com.zmy.rtmp_pusher.lib.exception.DelegateException;
 
-public class PusherException extends DelegateException {
+public class PusherException extends Exception {
 
-    public PusherException(Exception exception) {
-        super(exception);
+    public PusherException(Throwable cause) {
+        super(cause);
     }
+
+
+
 }

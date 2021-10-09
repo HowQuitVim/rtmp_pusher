@@ -8,11 +8,13 @@ public abstract class VideoCapture {
     protected VideoCaptureCallback callback;
     private boolean ready = false;
 
-    public VideoCapture(VideoCaptureCallback callback) {
-        this.callback = callback;
+
+    public  void initialize(VideoCaptureCallback callback){
+        this.callback=callback;
+        doInitialize();
     }
 
-    public abstract void initialize();
+    protected abstract void doInitialize();
 
     public abstract int getWidth();
 

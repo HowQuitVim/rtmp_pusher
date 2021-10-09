@@ -71,11 +71,15 @@ public class LinkedQueue<T> extends Queue<T, T[]> {
     @Override
     public synchronized void clear() {
         if (deleter != null) {
-            while (!list.isEmpty()) {
-                deleter.delete(list.removeFirst());
-            }
+            clearWithDeleter();
         } else {
             list.clear();
+        }
+    }
+
+    private void clearWithDeleter() {
+        while (!list.isEmpty()) {
+            deleter.delete(list.removeFirst());
         }
     }
 

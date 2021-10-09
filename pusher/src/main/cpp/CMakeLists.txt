@@ -10,6 +10,8 @@ add_library(
         main.cpp
         RtmpPusher.cpp
         RtmpPacket.cpp
+        jni_env_ptr.cpp
+        NativeLogger.cpp
 )
 
 target_include_directories(pusher PUBLIC librtmp)

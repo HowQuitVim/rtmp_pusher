@@ -11,7 +11,7 @@ public class RtmpPacket {
     public static final LinkedQueue.Deleter<RtmpPacket> DELETER = new RtmpPacketDeleter();
 
     private long handle = 0;
-    private PacketType type;
+    private final PacketType type;
 
     private RtmpPacket(long handle, PacketType type) {
         if (handle == 0) {
@@ -46,14 +46,13 @@ public class RtmpPacket {
 
     private native long native_clone(long handle);
 
-    public RtmpPacket copy(){
-        return new RtmpPacket(native_clone(handle),type);
+    public RtmpPacket copy() {
+        return new RtmpPacket(native_clone(handle), type);
     }
 
 
     public static RtmpPacket createForSpsPps(ByteBuffer sps, int spsOffset, int spsLen, ByteBuffer pps, int ppsOffset, int ppsLen) {
-        RtmpPacket packet = new RtmpPacket(native_create_for_sps_pps(sps, spsOffset, spsLen, pps, ppsOffset, ppsLen), PacketType.SPS_PPS);
-        return packet;
+        return new RtmpPacket(native_create_for_sps_pps(sps, spsOffset, spsLen, pps, ppsOffset, ppsLen), PacketType.SPS_PPS);
     }
 
     public static RtmpPacket createForVideo(ByteBuffer data, int offset, int dataLen, boolean keyFrame) {

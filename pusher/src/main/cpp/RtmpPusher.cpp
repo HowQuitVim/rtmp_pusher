@@ -3,6 +3,7 @@
 //
 
 #include "RtmpPusher.h"
+#include "fcntl.h"
 
 RtmpPusher::RtmpPusher(std::string &&url) : url(std::move(url)) {}
 
@@ -23,13 +24,11 @@ bool RtmpPusher::connect() {
 
 
 bool RtmpPusher::init() {
-    if (rtmp) {
-        RTMP_Close(rtmp);
-        RTMP_Free(rtmp);
-    }
+    release();
     rtmp = RTMP_Alloc();
     if (!rtmp)return false;
     RTMP_Init(rtmp);
+    rtmp->Link.timeout = 1;
     if (RTMP_SetupURL(rtmp, const_cast<char *>(url.c_str())) == FALSE) {
         return false;
     }
@@ -37,12 +36,16 @@ bool RtmpPusher::init() {
     return true;
 }
 
-RtmpPusher::~RtmpPusher() {
+void RtmpPusher::release() {
     if (rtmp) {
         RTMP_Close(rtmp);
         RTMP_Free(rtmp);
         rtmp = nullptr;
     }
+}
+
+RtmpPusher::~RtmpPusher() {
+    release();
 }
 
 
@@ -63,4 +66,8 @@ uint32_t RtmpPusher::current_timestamp() {
         start_time = current;
     }
     return current - start_time;
+}
+
+bool RtmpPusher::is_connected() {
+    return rtmp != nullptr && RTMP_IsConnected(rtmp);
 }

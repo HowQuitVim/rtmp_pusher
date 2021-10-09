@@ -5,6 +5,7 @@ import android.media.MediaFormat;
 import android.util.Log;
 import android.view.Surface;
 
+import com.zmy.rtmp_pusher.lib.log.RtmpLogManager;
 import com.zmy.rtmp_pusher.lib.queue.LinkedQueue;
 import com.zmy.rtmp_pusher.lib.util.WorkerThread;
 
@@ -113,7 +114,7 @@ public abstract class IEncoder {
             try {
                 int index = mediaCodec.dequeueOutputBuffer(info, -1);
                 if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    Log.d("rtmp", "onOutputFormatChanged-------" + IEncoder.this.getClass().getSimpleName());
+                    RtmpLogManager.d("rtmp", "onOutputFormatChanged-------" + IEncoder.this.getClass().getSimpleName());
                     onOutputFormatChanged();
                 }
                 if (index == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED && android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {

@@ -17,6 +17,8 @@ private:
 
     uint32_t current_timestamp();
 
+    void release();
+
 public:
 
     RtmpPusher(std::string &&url);
@@ -31,6 +33,9 @@ public:
     virtual ~RtmpPusher();
 
     bool push(RtmpPacket *pPacket);
+
+    bool is_connected();
+
 };
 
 

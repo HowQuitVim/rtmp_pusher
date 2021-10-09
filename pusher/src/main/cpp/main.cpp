@@ -3,28 +3,36 @@
 #include "android/log.h"
 #include "RtmpPusher.h"
 #include "RtmpPacket.h"
+#include "NativeLogger.h"
 //
 // Created by zmy on 2021/9/24.
 //
+/*-----------------------------------Log----------------------------------------*/
+NativeLogger *native_logger = nullptr;
+
+void log_cb(int level, const char *fmt, va_list vl);
+
+extern "C"
+JNIEXPORT void JNICALL native_register_logger(JNIEnv *env, jclass clazz, jobject logger);
+
 /*-----------------------------------Pusher----------------------------------------*/
 
 extern "C"
-JNIEXPORT jlong JNICALL native_new_instance(JNIEnv *env, jobject thiz, jstring url);
+JNIEXPORT jlong JNICALL native_new_instance(JNIEnv *env, jclass clazz, jstring url);
 extern "C"
-JNIEXPORT void JNICALL native_release(JNIEnv *env, jobject thiz, jlong handle);
+JNIEXPORT void JNICALL native_release(JNIEnv *env, jclass clazz, jlong handle);
 extern "C"
-JNIEXPORT jboolean  JNICALL native_init(JNIEnv *env, jobject thiz, jlong handle);
+JNIEXPORT jboolean  JNICALL native_init(JNIEnv *env, jclass clazz, jlong handle);
 extern "C"
-JNIEXPORT jboolean  JNICALL native_connect(JNIEnv *env, jobject thiz, jlong handle);
+JNIEXPORT jboolean  JNICALL native_connect(JNIEnv *env, jclass clazz, jlong handle);
 extern "C"
-JNIEXPORT jboolean  JNICALL native_push(JNIEnv *env, jobject thiz, jlong handle, jlong packet_handle);
+JNIEXPORT jboolean  JNICALL native_push(JNIEnv *env, jclass clazz, jlong handle, jlong packet_handle);
+extern "C"
+JNIEXPORT jboolean  JNICALL native_is_connected(JNIEnv *env, jclass clazz, jlong handle);
 
 
 
-
-
-
-/*-----------------------------------EncodeFrame----------------------------------------*/
+/*-----------------------------------RtmpPacket----------------------------------------*/
 extern "C"
 JNIEXPORT jlong  JNICALL
 native_create_for_sps_pps(JNIEnv *env, jclass clazz, jobject sps, jint sps_offset, jint sps_len, jobject pps, jint pps_offset, jint pps_len);
@@ -60,6 +68,7 @@ static const JNINativeMethod pusher_native_method[] = {
         {"native_init",         "(J)Z",                  (void *) native_init},
         {"native_connect",      "(J)Z",                  (void *) native_connect},
         {"native_push",         "(JJ)Z",                 (void *) native_push},
+        {"native_is_connected", "(J)Z",                  (void *) native_is_connected},
 };
 const char *encode_frame_class = "com/zmy/rtmp_pusher/lib/encoder/RtmpPacket";
 static const JNINativeMethod encode_frame_native_method[] = {
@@ -72,8 +81,12 @@ static const JNINativeMethod encode_frame_native_method[] = {
 
 const char *err_class = "com/zmy/rtmp_pusher/lib/exception/Err";
 static const JNINativeMethod err_native_method[] = {
-        {"nativeErrno",       "()I",                   (void *) native_get_errno},
-        {"nativeErrDescribe", "(I)Ljava/lang/String;", (void *) native_err_describe},
+        {"native_errno",        "()I",                   (void *) native_get_errno},
+        {"native_err_describe", "(I)Ljava/lang/String;", (void *) native_err_describe},
+};
+const char *log_class = "com/zmy/rtmp_pusher/lib/log/RtmpLogManager";
+static const JNINativeMethod log_native_method[] = {
+        {"native_register_logger", "(Lcom/zmy/rtmp_pusher/lib/log/RtmpLogger;)V", (void *) native_register_logger},
 };
 
 JNIEXPORT int register_native_method(JNIEnv *env, const char *clazz_name, const JNINativeMethod *method, jint size) {
@@ -81,6 +94,8 @@ JNIEXPORT int register_native_method(JNIEnv *env, const char *clazz_name, const 
     jint ret = env->RegisterNatives(clazz, method, size);
     return ret;
 }
+
+JavaVM *jvm = nullptr;
 
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *env = nullptr;
@@ -99,20 +114,46 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
                                sizeof(err_native_method) / sizeof(err_native_method[0])) != JNI_OK) {
         return JNI_ERR;
     }
+    if (register_native_method(env, log_class, log_native_method,
+                               sizeof(log_native_method) / sizeof(log_native_method[0])) != JNI_OK) {
+        return JNI_ERR;
+    }
+    jvm = vm;
+    RTMP_LogSetCallback(log_cb);
     return JNI_VERSION_1_6;
 }
 
-void callback(int level, const char *fmt, va_list vl) {
-    static char buf[2048];
-    vsnprintf(buf, 2048 - 1, fmt, vl);
-    __android_log_print(ANDROID_LOG_DEBUG, "rtmp", "%s", buf);
+JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *reserved) {
+    RTMP_LogSetCallback(nullptr);
+    if (native_logger != nullptr) {
+        delete native_logger;
+        native_logger = nullptr;
+    }
 }
 
+void log_cb(int level, const char *fmt, va_list vl) {
+    if (native_logger != nullptr) {
+        static char buf[2048];
+        vsnprintf(buf, 2048 - 1, fmt, vl);
+        native_logger->print(static_cast<RTMP_LogLevel>(level), "native_pusher", buf);
+    }
+
+}
+/*-----------------------------------Log----------------------------------------*/
+extern "C"
+JNIEXPORT void JNICALL native_register_logger(JNIEnv *env, jclass clazz, jobject logger) {
+    if (native_logger != nullptr) {
+        delete native_logger;
+        native_logger = nullptr;
+    }
+    if(logger!=nullptr){
+        native_logger = new NativeLogger(jvm, logger);
+    }
+}
 
 /*-----------------------------------Pusher----------------------------------------*/
 extern "C"
-JNIEXPORT jlong JNICALL native_new_instance(JNIEnv *env, jobject thiz, jstring url) {
-    RTMP_LogSetCallback(callback);
+JNIEXPORT jlong JNICALL native_new_instance(JNIEnv *env, jclass thiz, jstring url) {
     jboolean copy = false;
     const char *_url = env->GetStringUTFChars(url, &copy);
     if (!_url) {
@@ -124,31 +165,33 @@ JNIEXPORT jlong JNICALL native_new_instance(JNIEnv *env, jobject thiz, jstring u
 
 }
 extern "C"
-JNIEXPORT void JNICALL native_release(JNIEnv *env, jobject thiz, jlong handle) {
+JNIEXPORT void JNICALL native_release(JNIEnv *env, jclass clazz, jlong handle) {
     delete (RtmpPusher *) handle;
 }
 
 extern "C"
-JNIEXPORT jboolean  JNICALL native_init(JNIEnv *env, jobject thiz, jlong handle) {
+JNIEXPORT jboolean  JNICALL native_init(JNIEnv *env, jclass clazz, jlong handle) {
     return ((RtmpPusher *) handle)->init();
 }
 extern "C"
-JNIEXPORT jboolean JNICALL native_connect(JNIEnv *env, jobject thiz, jlong handle) {
+JNIEXPORT jboolean JNICALL native_connect(JNIEnv *env, jclass clazz, jlong handle) {
     return ((RtmpPusher *) handle)->connect();
 }
 
 extern "C"
-JNIEXPORT jboolean  JNICALL native_push(JNIEnv *env, jobject thiz, jlong handle, jlong packet_handle) {
+JNIEXPORT jboolean  JNICALL native_push(JNIEnv *env, jclass clazz, jlong handle, jlong packet_handle) {
     return ((RtmpPusher *) handle)->push((RtmpPacket *) packet_handle);
-
+}
+extern "C"
+JNIEXPORT jboolean  JNICALL native_is_connected(JNIEnv *env, jclass clazz, jlong handle) {
+    return ((RtmpPusher *) handle)->is_connected();
 }
 
 
 
 
 
-
-/*-----------------------------------EncodeFrame----------------------------------------*/
+/*-----------------------------------RtmpPacket----------------------------------------*/
 extern "C"
 JNIEXPORT jlong JNICALL
 native_create_for_sps_pps(JNIEnv *env, jclass clazz, jobject sps, jint sps_offset, jint sps_len, jobject pps, jint pps_offset, jint pps_len) {
@@ -181,7 +224,7 @@ native_release_frame(JNIEnv *env, jclass jobject, jlong handle) {
 extern "C"
 JNIEXPORT jlong  JNICALL
 native_clone(JNIEnv *env, jclass jobject, jlong handle) {
-    RtmpPacket *src = (RtmpPacket *) handle;
+    auto src = (RtmpPacket *) handle;
     return (int64_t) src->clone();
 }
 

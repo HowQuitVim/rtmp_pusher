@@ -4,6 +4,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.zmy.rtmp_pusher.lib.log.RtmpLogManager;
+
 public abstract class WorkerThread extends Thread {
     private boolean exitFlag = false;
 
@@ -29,7 +31,7 @@ public abstract class WorkerThread extends Thread {
             exitFlag = true;
         }
         doOnExit();
-        Log.d("rtmp", getName() + " exit");
+        RtmpLogManager.d("rtmp", getName() + " exit");
     }
 
     protected abstract boolean doMain();
@@ -47,6 +49,7 @@ public abstract class WorkerThread extends Thread {
     public void exit() {
         setExitFlag();
         if (getId() == Thread.currentThread().getId()) return;
+        this.interrupt();
         try {
             this.join();
         } catch (InterruptedException e) {

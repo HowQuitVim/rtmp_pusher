@@ -21,8 +21,7 @@ public class MicAudioCapture extends AudioCapture {
     private final int sampleRate;
     private final int channelConfig;
 
-    public MicAudioCapture(AudioCaptureCallback callback, int format, int sampleRate, int channelConfig) {
-        super(callback);
+    public MicAudioCapture(int format, int sampleRate, int channelConfig) {
         this.format = format;
         this.sampleRate = sampleRate;
         this.channelConfig = channelConfig;
@@ -39,7 +38,7 @@ public class MicAudioCapture extends AudioCapture {
     }
 
     @Override
-    public void initialize() {
+    public void doInitialize() {
         try {
             if (audioRecord != null) throw new IllegalStateException("already exists a audio recorder");
             bufferSize = AudioRecord.getMinBufferSize(

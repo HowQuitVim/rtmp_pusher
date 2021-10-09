@@ -16,11 +16,12 @@ public abstract class AudioCapture {
 
     public abstract int getSampleFormat();
 
-    public AudioCapture(AudioCaptureCallback callback) {
+    public void initialize(AudioCaptureCallback callback) {
         this.callback = callback;
+        doInitialize();
     }
 
-    public abstract void initialize();
+    protected abstract void doInitialize();
 
     public void start(@NonNull ByteQueue queue) {
         this.queue = queue;

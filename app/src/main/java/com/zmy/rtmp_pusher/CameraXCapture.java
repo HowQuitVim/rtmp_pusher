@@ -1,8 +1,9 @@
 package com.zmy.rtmp_pusher;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.util.Log;
+import android.content.pm.PackageManager;
 import android.util.Size;
 import android.view.Surface;
 import android.view.WindowManager;
@@ -22,8 +23,11 @@ import androidx.lifecycle.LifecycleOwner;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.zmy.rtmp_pusher.lib.encoder.EOFHandle;
+import com.zmy.rtmp_pusher.lib.log.RtmpLogManager;
 import com.zmy.rtmp_pusher.lib.video_collector.VideoCapture;
 import com.zmy.rtmp_pusher.lib.video_collector.VideoCaptureCallback;
+
+import kotlin.io.AccessDeniedException;
 
 @SuppressLint("RestrictedApi")
 public class CameraXCapture extends VideoCapture implements Preview.SurfaceProvider, Consumer<SurfaceRequest.Result>, Observable.Observer<CameraInternal.State> {
@@ -41,8 +45,8 @@ public class CameraXCapture extends VideoCapture implements Preview.SurfaceProvi
     private SurfaceRequest request;
     private EOFHandle eofHandle;
 
-    public CameraXCapture(Context context, LifecycleOwner lifecycleOwner, int width, int height, CameraSelector cameraSelector, Preview preview, VideoCaptureCallback callback) {
-        super(callback);
+    public CameraXCapture(Context context, LifecycleOwner lifecycleOwner, int width, int height, CameraSelector cameraSelector, Preview preview) {
+        super();
         this.context = context;
         this.lifecycleOwner = lifecycleOwner;
         this.cameraSelector = cameraSelector;
@@ -54,8 +58,11 @@ public class CameraXCapture extends VideoCapture implements Preview.SurfaceProvi
 
 
     @Override
-    public void initialize() {
+    public void doInitialize() {
         try {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) {
+                throw new SecurityException("Permission denied");
+            }
             ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
             cameraProvider.unbindAll();
             cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, getEncodeCase(), preview);
@@ -133,7 +140,7 @@ public class CameraXCapture extends VideoCapture implements Preview.SurfaceProvi
     public void onSurfaceRequested(@NonNull SurfaceRequest request) {
         outputWidth = request.getResolution().getWidth();
         outputHeight = request.getResolution().getHeight();
-        Log.d("rtmp", "camera output body_size = " + outputWidth + "x" + outputHeight);
+        RtmpLogManager.d("rtmp", "camera output body_size = " + outputWidth + "x" + outputHeight);
         request.getCamera().getCameraState().addObserver(ContextCompat.getMainExecutor(context), this);
         this.request = request;
         if (callback != null) {
@@ -154,7 +161,7 @@ public class CameraXCapture extends VideoCapture implements Preview.SurfaceProvi
 
     private Preview createUseCase(Preview.SurfaceProvider provider) {
         Preview useCase = new Preview.Builder()
-                .setTargetResolution(getRotatedResolution(width,height))
+                .setTargetResolution(getRotatedResolution(width, height))
                 .build();
         useCase.setSurfaceProvider(provider);
         return useCase;
