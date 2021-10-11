@@ -53,4 +53,5 @@ dependencies {
     implementation "androidx.camera:camera-view:1.0.0-alpha28"
     // If you want to additionally use the CameraX Extensions library
     implementation "androidx.camera:camera-extensions:1.0.0-alpha28"
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
 }

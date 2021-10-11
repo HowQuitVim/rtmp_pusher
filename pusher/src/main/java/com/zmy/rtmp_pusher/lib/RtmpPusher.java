@@ -26,14 +26,15 @@ import com.zmy.rtmp_pusher.lib.video_collector.VideoCaptureCallback;
 import java.util.Locale;
 
 public class RtmpPusher implements PusherCallback, AudioCaptureCallback, VideoCaptureCallback, EncoderCallback {
-
+    static {
+        System.loadLibrary("pusher");
+    }
 
     public static void init() {
         init(Log.VERBOSE);
     }
 
     public static void init(@RtmpLogger.LogLevel int logThreshold) {
-        System.loadLibrary("pusher");
         RtmpLogManager.registerLogger(new DefaultLogger(logThreshold));
     }
 
@@ -66,9 +67,7 @@ public class RtmpPusher implements PusherCallback, AudioCaptureCallback, VideoCa
 
     @Override
     public void onPushError(PusherException exception) {
-        if (callback != null) {
-            callback.onPusherError(exception);
-        }
+        if (callback != null) callback.onPusherError(exception);
     }
 
     @Override
@@ -92,7 +91,7 @@ public class RtmpPusher implements PusherCallback, AudioCaptureCallback, VideoCa
     }
 
     public void release() {
-        RtmpLogManager.d("rtmp","release");
+        RtmpLogManager.d("rtmp", "release");
         if (pusher != null) pusher.release();
         if (audioCapture != null) audioCapture.release();
         if (videoCapture != null) videoCapture.release();

@@ -67,9 +67,7 @@ public class CameraXCapture extends VideoCapture implements Preview.SurfaceProvi
             cameraProvider.unbindAll();
             cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, getEncodeCase(), preview);
         } catch (Exception e) {
-            if (callback != null) {
-                callback.onVideoCaptureInit(this, e);
-            }
+            if (callback != null) callback.onVideoCaptureInit(this, e);
         }
     }
 
@@ -77,7 +75,9 @@ public class CameraXCapture extends VideoCapture implements Preview.SurfaceProvi
     public void release() {
         try {
             setReady(false);
-            cameraProviderFuture.get().unbindAll();
+            if (request != null) {
+                request.getCamera().getCameraState().removeObserver(this);
+            }
             if (eofHandle != null) {
                 eofHandle.signalEndOfInputStream();
             }
@@ -95,8 +95,10 @@ public class CameraXCapture extends VideoCapture implements Preview.SurfaceProvi
                 return 180;
             case Surface.ROTATION_270:
                 return 270;
+            case Surface.ROTATION_0:
             default:
                 return 0;
+
         }
     }
 
@@ -140,7 +142,8 @@ public class CameraXCapture extends VideoCapture implements Preview.SurfaceProvi
     public void onSurfaceRequested(@NonNull SurfaceRequest request) {
         outputWidth = request.getResolution().getWidth();
         outputHeight = request.getResolution().getHeight();
-        RtmpLogManager.d("rtmp", "camera output body_size = " + outputWidth + "x" + outputHeight);
+        request.getCamera().getCameraState().removeObserver(this);
+        RtmpLogManager.d("rtmp", "camera output size = " + outputWidth + "x" + outputHeight);
         request.getCamera().getCameraState().addObserver(ContextCompat.getMainExecutor(context), this);
         this.request = request;
         if (callback != null) {
@@ -156,7 +159,7 @@ public class CameraXCapture extends VideoCapture implements Preview.SurfaceProvi
 
     @Override
     public void onError(@NonNull Throwable t) {
-        callback.onVideoCaptureError(new Exception(t));
+        if (callback != null) callback.onVideoCaptureError(new Exception(t));
     }
 
     private Preview createUseCase(Preview.SurfaceProvider provider) {

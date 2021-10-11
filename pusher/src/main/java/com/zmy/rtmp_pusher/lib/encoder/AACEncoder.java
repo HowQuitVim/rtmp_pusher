@@ -96,8 +96,8 @@ public class AACEncoder extends IEncoder {
     @Override
     protected void waitForCodecDone() {
         if (encodeWriteThread != null) {
+            mediaCodec.stop();
             try {
-                mediaCodec.stop();
                 encodeWriteThread.join();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -135,7 +135,7 @@ public class AACEncoder extends IEncoder {
                 return (flag & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
             } catch (Exception e) {
                 e.printStackTrace();
-                if (isReady()) {
+                if (isReady() && callback != null) {
                     callback.onEncodeError(AACEncoder.this, e);
                 }
                 return true;

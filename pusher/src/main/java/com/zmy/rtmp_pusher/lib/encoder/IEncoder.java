@@ -89,7 +89,7 @@ public abstract class IEncoder {
         setReady(false);
         waitForCodecDone();
         mediaCodec.release();
-        mediaCodec=null;
+        mediaCodec = null;
     }
 
     protected void waitForCodecDone() {
@@ -136,7 +136,7 @@ public abstract class IEncoder {
                 return (info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
             } catch (Exception e) {
                 e.printStackTrace();
-                if (!isReady()) {
+                if (!isReady() && callback != null) {
                     callback.onEncodeError(IEncoder.this, e);
                 }
                 return true;

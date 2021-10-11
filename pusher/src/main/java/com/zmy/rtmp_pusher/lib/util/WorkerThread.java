@@ -1,7 +1,5 @@
 package com.zmy.rtmp_pusher.lib.util;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 
 import com.zmy.rtmp_pusher.lib.log.RtmpLogManager;
