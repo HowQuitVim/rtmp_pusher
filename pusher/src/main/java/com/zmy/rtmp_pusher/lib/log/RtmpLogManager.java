@@ -32,5 +32,9 @@ public class RtmpLogManager {
         if (logger != null) logger.print(Log.ERROR, tag, msg);
     }
 
+    public static void e(String tag, String msg, Exception exception) {
+        if (logger != null) logger.print(Log.ERROR, tag, msg + "\n" + Log.getStackTraceString(exception));
+    }
+
     private static native void native_register_logger(RtmpLogger logger);
 }

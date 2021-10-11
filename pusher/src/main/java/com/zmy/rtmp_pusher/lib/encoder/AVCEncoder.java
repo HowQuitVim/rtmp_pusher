@@ -5,6 +5,8 @@ import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.util.Log;
 
+import com.zmy.rtmp_pusher.lib.log.RtmpLogManager;
+
 import java.nio.ByteBuffer;
 
 public class AVCEncoder extends IEncoder implements EOFHandle {

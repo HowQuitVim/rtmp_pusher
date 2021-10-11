@@ -6,12 +6,14 @@ import android.media.MediaRecorder;
 
 import androidx.annotation.NonNull;
 
+import com.zmy.rtmp_pusher.lib.log.RtmpLogManager;
 import com.zmy.rtmp_pusher.lib.queue.ByteQueue;
 import com.zmy.rtmp_pusher.lib.util.WorkerThread;
 
 import java.nio.ByteBuffer;
 
 public class MicAudioCapture extends AudioCapture {
+    private static final String TAG = MicAudioCapture.class.getSimpleName();
     private AudioRecordThread recordThread;
     private AudioRecord audioRecord;
     private int bufferSize;

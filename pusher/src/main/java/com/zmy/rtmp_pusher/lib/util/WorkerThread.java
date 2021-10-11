@@ -29,7 +29,7 @@ public abstract class WorkerThread extends Thread {
             exitFlag = true;
         }
         doOnExit();
-        RtmpLogManager.d("rtmp", getName() + " exit");
+        RtmpLogManager.d(Thread.currentThread().getName(), " exit");
     }
 
     protected abstract boolean doMain();

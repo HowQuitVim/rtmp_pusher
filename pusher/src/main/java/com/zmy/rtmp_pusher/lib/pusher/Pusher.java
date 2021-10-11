@@ -1,10 +1,7 @@
 package com.zmy.rtmp_pusher.lib.pusher;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 
-import com.zmy.rtmp_pusher.lib.RtmpPusher;
 import com.zmy.rtmp_pusher.lib.encoder.RtmpPacket;
 import com.zmy.rtmp_pusher.lib.exception.Err;
 import com.zmy.rtmp_pusher.lib.log.RtmpLogManager;
@@ -14,9 +11,9 @@ import com.zmy.rtmp_pusher.lib.util.WorkerThread;
 import java.util.Locale;
 
 public class Pusher {
-
+    private static final String TAG = Pusher.class.getSimpleName();
     private final PusherCallback callback;
-    private long handle = 0;
+    private long handle;
     private final String url;
     private final LinkedQueue<RtmpPacket> inputQueue;
     private PushThread pushThread;
@@ -52,7 +49,7 @@ public class Pusher {
     }
 
     private synchronized void releaseInternal() {
-        Log.d("rtmp", "releaseInternal");
+        RtmpLogManager.d(TAG, "releaseInternal");
         if (handle != 0) {
             native_release(handle);
             handle = 0;
@@ -147,7 +144,7 @@ public class Pusher {
             synchronized (Pusher.this) {
                 if (!isConnected()) {
                     waitUntilConnected();
-                    RtmpLogManager.d("rtmp", "connect success");
+                    RtmpLogManager.d(TAG, "connect success");
                 }
                 if (handle == 0) return true;
 
@@ -155,6 +152,7 @@ public class Pusher {
                     try {
                         push(audioSpecificConfig.copy().getHandle());
                         needPushASC = false;
+                        RtmpLogManager.d(TAG, "push asc");
                     } catch (PusherException e) {
                         e.printStackTrace();
                         callback.onPushError(e);
@@ -164,33 +162,39 @@ public class Pusher {
                     try {
                         push(videoSpsPps.copy().getHandle());
                         needPushSpsPps = false;
+                        RtmpLogManager.d(TAG, "push sps/pps");
                     } catch (PusherException e) {
                         e.printStackTrace();
                         callback.onPushError(e);
                     }
                 }
                 if (needPushASC && target.getType() == RtmpPacket.PacketType.AUDIO) {
-                    target.release();//drop it ,must push asc first;
+                    target.release();
+                    RtmpLogManager.d(TAG, "drop audio,must push asc first");
                     return false;
                 }
                 if (needPushSpsPps && (target.getType() == RtmpPacket.PacketType.VIDEO_P_FRAME || target.getType() == RtmpPacket.PacketType.VIDEO_SYNC_FRAME)) {
-                    target.release();//drop it ,must push asc SPS/PPS
+                    target.release();
+                    RtmpLogManager.d(TAG, "drop video ,must push asc SPS/PPS first");
                     return false;
                 }
                 if (needPushSyncFrame && target.getType() == RtmpPacket.PacketType.VIDEO_P_FRAME) {
-                    RtmpLogManager.d("rtmp", "drop p frame");
-                    target.release();//drop it ,must push video sync frame
+                    target.release();
+                    RtmpLogManager.d(TAG, "drop video p frame ,must push video sync frame first");
                     return false;
                 }
                 if (target.getType() != RtmpPacket.PacketType.SPS_PPS && target.getType() != RtmpPacket.PacketType.AUDIO_SPECIFIC_CONFIG) {
                     try {
                         push(target.getHandle());
                         if (target.getType() == RtmpPacket.PacketType.VIDEO_SYNC_FRAME) {
-                            RtmpLogManager.d("rtmp", "push sync frame");
+                            RtmpLogManager.d(TAG, "push sync frame");
                             needPushSyncFrame = false;
                         }
                         if (target.getType() == RtmpPacket.PacketType.VIDEO_P_FRAME) {
-                            RtmpLogManager.d("rtmp", "push P frame");
+                            RtmpLogManager.d(TAG, "push P frame");
+                        }
+                        if(target.getType()==RtmpPacket.PacketType.AUDIO){
+                            RtmpLogManager.d(TAG, "push audio");
                         }
                     } catch (PusherException e) {
                         e.printStackTrace();

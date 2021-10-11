@@ -1,4 +1,4 @@
-package com.zmy.rtmp_pusher;
+package com.zmy.rtmp_pusher.capture.camerax_capture;
 
 import android.Manifest;
 import android.annotation.SuppressLint;

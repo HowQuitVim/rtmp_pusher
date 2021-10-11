@@ -56,6 +56,10 @@ public abstract class IEncoder {
         return surface;
     }
 
+    public String getName() {
+        return this.getClass().getSimpleName();
+    }
+
     protected abstract boolean createSurface();
 
     public void setOutputQueue(LinkedQueue<RtmpPacket> outputQueue) {
@@ -106,7 +110,7 @@ public abstract class IEncoder {
     class EncodeReadThread extends WorkerThread {
 
         public EncodeReadThread() {
-            super(IEncoder.this.getClass().getSimpleName() + "_EncodeReadThread");
+            super(IEncoder.this.getName() + "_EncodeReadThread");
         }
 
         @Override
@@ -114,7 +118,7 @@ public abstract class IEncoder {
             try {
                 int index = mediaCodec.dequeueOutputBuffer(info, -1);
                 if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    RtmpLogManager.d("rtmp", "onOutputFormatChanged-------" + IEncoder.this.getClass().getSimpleName());
+                    RtmpLogManager.d(IEncoder.this.getName(), "onOutputFormatChanged-------" + IEncoder.this.getClass().getSimpleName());
                     onOutputFormatChanged();
                 }
                 if (index == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED && android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -136,7 +140,7 @@ public abstract class IEncoder {
                 return (info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
             } catch (Exception e) {
                 e.printStackTrace();
-                if (!isReady() && callback != null) {
+                if (isReady() && callback != null) {
                     callback.onEncodeError(IEncoder.this, e);
                 }
                 return true;

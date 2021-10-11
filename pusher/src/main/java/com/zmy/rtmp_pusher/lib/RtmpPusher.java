@@ -38,6 +38,7 @@ public class RtmpPusher implements PusherCallback, AudioCaptureCallback, VideoCa
         RtmpLogManager.registerLogger(new DefaultLogger(logThreshold));
     }
 
+    private static final String TAG = RtmpPusher.class.getSimpleName();
     private final String url;
     private final int cacheSize;
     private Pusher pusher;
@@ -73,11 +74,11 @@ public class RtmpPusher implements PusherCallback, AudioCaptureCallback, VideoCa
     @Override
     public void onAudioCaptureInit(AudioCapture capture, @Nullable Exception exception) {
         if (exception != null) {
-            RtmpLogManager.d("rtmp", "fail to init AudioCapture");
+            RtmpLogManager.d(TAG, "fail to init AudioCapture");
             release();
             if (callback != null) callback.onAudioCaptureError(exception);
         } else {
-            capture.start(new ByteQueue(2, 4096));
+            capture.start(new ByteQueue(1024, 4096));
             audioEncoder = new AACEncoder(64000, this, capture.getChannelCount(), capture.getSampleFormat(), capture.getSampleRate(), capture.getQueue());
             audioEncoder.setOutputQueue(pusher.getQueue());
             try {
@@ -91,7 +92,7 @@ public class RtmpPusher implements PusherCallback, AudioCaptureCallback, VideoCa
     }
 
     public void release() {
-        RtmpLogManager.d("rtmp", "release");
+        RtmpLogManager.d(TAG, "release");
         if (pusher != null) pusher.release();
         if (audioCapture != null) audioCapture.release();
         if (videoCapture != null) videoCapture.release();
@@ -101,7 +102,7 @@ public class RtmpPusher implements PusherCallback, AudioCaptureCallback, VideoCa
 
     @Override
     public void onAudioCaptureError(Exception e) {
-        Log.e("rtmp", "fail to collect audio pcm", e);
+        Log.e(TAG, "fail to collect audio pcm", e);
         release();
         if (callback != null) callback.onAudioCaptureError(e);
     }
@@ -127,7 +128,7 @@ public class RtmpPusher implements PusherCallback, AudioCaptureCallback, VideoCa
 
     @Override
     public void onVideoCaptureError(Exception e) {
-        Log.e("rtmp", "fail to open camera", e);
+        Log.e(TAG, "fail to open camera", e);
         release();
         if (callback != null) callback.onVideoCaptureError(e);
     }
@@ -136,11 +137,11 @@ public class RtmpPusher implements PusherCallback, AudioCaptureCallback, VideoCa
     public void onEncodeError(IEncoder encoder, Exception e) {
         release();
         if (encoder instanceof AVCEncoder) {
-            Log.e("rtmp", "video encode error", e);
+            Log.e(TAG, "video encode error", e);
             if (callback != null) callback.onVideoEncoderError(e);
         }
         if (encoder instanceof AACEncoder) {
-            Log.e("rtmp", "audio encode error", e);
+            Log.e(TAG, "audio encode error", e);
             if (callback != null) callback.onAudioEncoderError(e);
         }
     }
@@ -148,7 +149,7 @@ public class RtmpPusher implements PusherCallback, AudioCaptureCallback, VideoCa
 
     public static class Builder {
         private String url;
-        private int cacheSize = 100;
+        private int cacheSize;
         private AudioCapture audioCapture;
         private VideoCapture videoCapture;
         private RtmpCallback callback;
