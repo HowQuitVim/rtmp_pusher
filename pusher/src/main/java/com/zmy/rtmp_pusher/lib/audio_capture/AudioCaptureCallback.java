@@ -1,4 +1,4 @@
-package com.zmy.rtmp_pusher.lib.audio_collector;
+package com.zmy.rtmp_pusher.lib.audio_capture;
 
 import androidx.annotation.Nullable;
 

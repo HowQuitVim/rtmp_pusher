@@ -4,8 +4,8 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
-import com.zmy.rtmp_pusher.lib.audio_collector.AudioCapture;
-import com.zmy.rtmp_pusher.lib.audio_collector.AudioCaptureCallback;
+import com.zmy.rtmp_pusher.lib.audio_capture.AudioCapture;
+import com.zmy.rtmp_pusher.lib.audio_capture.AudioCaptureCallback;
 import com.zmy.rtmp_pusher.lib.encoder.AACEncoder;
 import com.zmy.rtmp_pusher.lib.encoder.AVCEncoder;
 import com.zmy.rtmp_pusher.lib.encoder.EncoderCallback;
@@ -20,8 +20,8 @@ import com.zmy.rtmp_pusher.lib.pusher.PusherCallback;
 import com.zmy.rtmp_pusher.lib.pusher.PusherException;
 import com.zmy.rtmp_pusher.lib.queue.ByteQueue;
 import com.zmy.rtmp_pusher.lib.queue.LinkedQueue;
-import com.zmy.rtmp_pusher.lib.video_collector.VideoCapture;
-import com.zmy.rtmp_pusher.lib.video_collector.VideoCaptureCallback;
+import com.zmy.rtmp_pusher.lib.video_capture.VideoCapture;
+import com.zmy.rtmp_pusher.lib.video_capture.VideoCaptureCallback;
 
 import java.util.Locale;
 

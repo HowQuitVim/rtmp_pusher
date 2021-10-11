@@ -11,9 +11,9 @@ import androidx.camera.core.Preview
 import androidx.camera.view.PreviewView
 import com.zmy.rtmp_pusher.lib.RtmpCallback
 import com.zmy.rtmp_pusher.lib.RtmpPusher
-import com.zmy.rtmp_pusher.lib.audio_collector.MicAudioCapture
+import com.zmy.rtmp_pusher.lib.audio_capture.MicAudioCapture
 import com.zmy.rtmp_pusher.lib.encoder.EOFHandle
-import com.zmy.rtmp_pusher.lib.video_collector.VideoCapture
+import com.zmy.rtmp_pusher.lib.video_capture.VideoCapture
 
 @RequiresApi(Build.VERSION_CODES.M)
 class MainActivity : AppCompatActivity(), RtmpCallback {

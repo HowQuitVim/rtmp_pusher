@@ -1,4 +1,4 @@
-package com.zmy.rtmp_pusher.lib.video_collector;
+package com.zmy.rtmp_pusher.lib.video_capture;
 
 import androidx.annotation.Nullable;
 

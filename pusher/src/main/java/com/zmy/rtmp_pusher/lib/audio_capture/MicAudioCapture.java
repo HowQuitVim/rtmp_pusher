@@ -1,9 +1,8 @@
-package com.zmy.rtmp_pusher.lib.audio_collector;
+package com.zmy.rtmp_pusher.lib.audio_capture;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 

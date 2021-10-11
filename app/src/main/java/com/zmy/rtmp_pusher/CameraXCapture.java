@@ -24,10 +24,7 @@ import androidx.lifecycle.LifecycleOwner;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.zmy.rtmp_pusher.lib.encoder.EOFHandle;
 import com.zmy.rtmp_pusher.lib.log.RtmpLogManager;
-import com.zmy.rtmp_pusher.lib.video_collector.VideoCapture;
-import com.zmy.rtmp_pusher.lib.video_collector.VideoCaptureCallback;
-
-import kotlin.io.AccessDeniedException;
+import com.zmy.rtmp_pusher.lib.video_capture.VideoCapture;
 
 @SuppressLint("RestrictedApi")
 public class CameraXCapture extends VideoCapture implements Preview.SurfaceProvider, Consumer<SurfaceRequest.Result>, Observable.Observer<CameraInternal.State> {
