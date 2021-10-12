@@ -33,7 +33,7 @@ int getLevel(RTMP_LogLevel level) {
     }
 }
 
-void NativeLogger::print(RTMP_LogLevel level, char *tag, char *msg) {
+void NativeLogger::print(RTMP_LogLevel level, const char *tag, const char *msg) {
     JNIEnvPtr env(jvm);
     jclass clazz = env->FindClass("com/zmy/rtmp_pusher/lib/log/RtmpLogger");
     jmethodID print_method = env->GetMethodID(clazz, "print", "(ILjava/lang/String;Ljava/lang/String;)V");

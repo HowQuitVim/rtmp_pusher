@@ -146,7 +146,7 @@ JNIEXPORT void JNICALL native_register_logger(JNIEnv *env, jclass clazz, jobject
         delete native_logger;
         native_logger = nullptr;
     }
-    if(logger!=nullptr){
+    if (logger != nullptr) {
         native_logger = new NativeLogger(jvm, logger);
     }
 }
