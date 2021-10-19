@@ -60,6 +60,15 @@ public class RtmpPacket {
     }
 
     public static RtmpPacket createForAudio(ByteBuffer data, int offset, int dataLen, int sampleRate, int channels, int bytesPerSample, boolean isConfigData) {
+        if (sampleRate != 5500 && sampleRate != 11000 && sampleRate != 22000 && sampleRate != 44100) {
+            throw new IllegalArgumentException("invalid sampleRate");
+        }
+        if (channels != 1 && channels != 2) {
+            throw new IllegalArgumentException("invalid channels");
+        }
+        if (bytesPerSample != 1 && bytesPerSample != 2) {
+            throw new IllegalArgumentException("invalid bytesPerSample");
+        }
         return new RtmpPacket(native_create_for_audio(data, offset, dataLen, sampleRate, channels, bytesPerSample, isConfigData), isConfigData ? PacketType.AUDIO_SPECIFIC_CONFIG : PacketType.AUDIO);
     }
 

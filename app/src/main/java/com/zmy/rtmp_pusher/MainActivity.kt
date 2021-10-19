@@ -18,9 +18,10 @@ import com.zmy.rtmp_pusher.lib.video_capture.VideoCapture
 
 @RequiresApi(Build.VERSION_CODES.M)
 class MainActivity : AppCompatActivity(), RtmpCallback {
-    companion object{
-        private const val TAG="MainActivity"
+    companion object {
+        private const val TAG = "MainActivity"
     }
+
     private val previewView by lazy { findViewById<PreviewView>(R.id.preview_view) }
     private val audioCapture: MicAudioCapture by lazy {
         MicAudioCapture(AudioFormat.ENCODING_PCM_16BIT, 44100, AudioFormat.CHANNEL_IN_STEREO)
@@ -30,7 +31,7 @@ class MainActivity : AppCompatActivity(), RtmpCallback {
         CameraXCapture(applicationContext, this, 1920, 1080, CameraSelector.DEFAULT_FRONT_CAMERA, Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) })
     }
 
-    private val rtmpPusher: RtmpPusher by lazy {
+    private val rtmpPusher by lazy {
         RtmpPusher.Builder()
             .url("rtmp://192.168.50.125:19350/live/livestream")
             .audioCapture(audioCapture)
@@ -43,7 +44,6 @@ class MainActivity : AppCompatActivity(), RtmpCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        RtmpPusher.init()
         rtmpPusher.start()
     }
 

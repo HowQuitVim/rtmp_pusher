@@ -30,14 +30,6 @@ public class RtmpPusher implements PusherCallback, AudioCaptureCallback, VideoCa
         System.loadLibrary("pusher");
     }
 
-    public static void init() {
-        init(Log.VERBOSE);
-    }
-
-    public static void init(@RtmpLogger.LogLevel int logThreshold) {
-        RtmpLogManager.registerLogger(new DefaultLogger(logThreshold));
-    }
-
     private static final String TAG = RtmpPusher.class.getSimpleName();
     private final String url;
     private final int cacheSize;

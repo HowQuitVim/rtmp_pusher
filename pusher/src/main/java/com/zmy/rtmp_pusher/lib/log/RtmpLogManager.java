@@ -5,7 +5,7 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 public class RtmpLogManager {
-    static RtmpLogger logger;
+    static RtmpLogger logger = new DefaultLogger(Log.VERBOSE);
 
     public static RtmpLogger getLogger() {
         return logger;

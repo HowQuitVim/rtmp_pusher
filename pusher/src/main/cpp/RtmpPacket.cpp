@@ -14,7 +14,7 @@ RtmpPacket::RtmpPacket() {
 }
 
 void RtmpPacket::init(int size) {
-    this->body_size=size;
+    this->body_size = size;
     RTMPPacket_Alloc(packet, size);
     RTMPPacket_Reset(packet);
 }
@@ -172,11 +172,13 @@ char getSampleRateMask(int sample_rate) {
         case 44100:
             mask = 0X0C;
             break;
+        default:
+            mask = 0;
     }
     return mask;
 }
 
-char getMask(int bytesPerSample) {
+char getSampleAccuracyMask(int bytesPerSample) {
     char mask;
     switch (bytesPerSample) {
         case 1:
@@ -185,6 +187,8 @@ char getMask(int bytesPerSample) {
         case 2:
             mask = 0X02;
             break;
+        default:
+            mask = 0;
     }
     return mask;
 }
@@ -198,6 +202,8 @@ char getChannelCountMask(int channels) {
         case 2:
             mask = 0X01;
             break;
+        default:
+            mask = 0;
     }
     return mask;
 }
@@ -209,7 +215,7 @@ RtmpPacket *RtmpPacket::create_for_audio(char *data, int data_len, bool is_audiO
     char *body = rtmpPacket->packet->m_body;
     char byte = 0xA0;//前四位表示音频数据格式  10（十进制）表示AAC，16进制就是A
     byte |= getSampleRateMask(sample_rate);//第5-6位的数值表示采样率，0 = 5.5 kHz，1 = 11 kHz，2 = 22 kHz，3(11) = 44 kHz。
-    byte |= getMask(bytes_per_sample); //第7位表示采样精度，0 = 8bits，1 = 16bits。
+    byte |= getSampleAccuracyMask(bytes_per_sample); //第7位表示采样精度，0 = 8bits，1 = 16bits。
     byte |= getChannelCountMask(channels); //第8位表示音频类型，0 = mono，1 = stereo
     body[0] = byte;
 
@@ -245,7 +251,7 @@ void RtmpPacket::update_timestamp(uint32_t timestamp) {
 }
 
 RtmpPacket *RtmpPacket::clone() {
-    RtmpPacket* target=new RtmpPacket();
+    auto target = new RtmpPacket();
     target->init(body_size);
     memcpy(target->getPacket()->m_body, packet->m_body, body_size);
 

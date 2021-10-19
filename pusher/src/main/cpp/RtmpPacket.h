@@ -8,7 +8,7 @@
 
 class RtmpPacket {
     RTMPPacket *packet = nullptr;
-    int body_size;
+    int body_size = 0;
 
 public:
     RtmpPacket();
@@ -21,6 +21,7 @@ public:
 
     void update_stream_id(int id);
 
+    RtmpPacket *clone();
 
     virtual ~RtmpPacket();
 
@@ -28,11 +29,7 @@ public:
 
     static RtmpPacket *create_for_video(char *data, int data_length, bool keyFrame);
 
-    static RtmpPacket *create_for_audio(char *data, int data_len, bool  is_audiO_specific_config, int sample_rate, int channels, int bytes_per_sample);
-
-    RtmpPacket *clone();
-
-
+    static RtmpPacket *create_for_audio(char *data, int data_len, bool is_audiO_specific_config, int sample_rate, int channels, int bytes_per_sample);
 };
 
 
