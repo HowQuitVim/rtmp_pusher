@@ -1,14 +1,18 @@
 package com.zmy.rtmp_pusher
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.view.PreviewView
+import androidx.core.content.ContextCompat
 import com.zmy.rtmp_pusher.capture.camerax_capture.CameraXCapture
 import com.zmy.rtmp_pusher.lib.RtmpCallback
 import com.zmy.rtmp_pusher.lib.RtmpPusher
@@ -30,6 +34,20 @@ class MainActivity : AppCompatActivity(), RtmpCallback {
     private val videoCapture: VideoCapture by lazy {
         CameraXCapture(applicationContext, this, 1920, 1080, CameraSelector.DEFAULT_FRONT_CAMERA, Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) })
     }
+    private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        if (it) {
+            recordAudioPermission.launch(Manifest.permission.RECORD_AUDIO)
+        } else {
+            Toast.makeText(applicationContext, "请同意权限", Toast.LENGTH_SHORT).show()
+        }
+    }
+    private val recordAudioPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        if (it)
+            rtmpPusher.start()
+        else
+            Toast.makeText(applicationContext, "请同意权限", Toast.LENGTH_SHORT).show()
+
+    }
 
     private val rtmpPusher by lazy {
         RtmpPusher.Builder()
@@ -44,7 +62,7 @@ class MainActivity : AppCompatActivity(), RtmpCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        rtmpPusher.start()
+        cameraPermission.launch(Manifest.permission.CAMERA)
     }
 
     override fun onDestroy() {
